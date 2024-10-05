@@ -105,7 +105,7 @@ def step_title_input():
                     st.session_state.completed_steps.append("Title")
 
                 st.success("PICO elements generated from Title. Proceeding to PICO step.")
-                st.rerun()
+                st.rerun() #rerun
                 
             except Exception as e:
                 st.error(str(e))
