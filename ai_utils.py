@@ -37,7 +37,7 @@ def generate_pico_from_title(title):
         
         # Call the OpenAI API to generate PICO elements
         response = client.chat.completions.create(
-            model='gpt-4o-mini',  # Use the desired model
+            model='gpt-4o',  # Use the desired model
             messages=[
                 {
                     "role": "system",
@@ -107,7 +107,7 @@ def refine_pico_elements(pico_elements):
 
         # Call the OpenAI API to refine PICO elements
         response = client.chat.completions.create(
-            model='gpt-4o-mini',
+            model='gpt-4o',
             messages=[
                 {
                     "role": "system",
@@ -133,6 +133,65 @@ def refine_pico_elements(pico_elements):
         logging.error(f"Error in refine_pico_elements: {e}")
         raise Exception("An error occurred while refining the PICO elements.")
 
+def generate_concepts_from_pico(pico_elements):
+    """
+    Generates key concepts from the given PICO elements using OpenAI's API.
+
+    Args:
+        pico_elements (dict): A dictionary containing the PICO elements.
+
+    Returns:
+        list: A list of extracted concepts.
+
+    Raises:
+        Exception: If an error occurs during the API call.
+    """
+    try:
+        client = OpenAI()
+        # Ensure OpenAI API key is set from Streamlit secrets
+        client.api_key = st.secrets["OPENAI_API_KEY"]  # Securely fetch the API key
+
+        # Construct the AI prompt
+        prompt = (
+            f"From the following PICO elements, extract between 3 to 6 key concepts that are highly relevant for developing an accurate and effective search strategy. Ensure that the concepts are distinct and do not overlap unnecessarily. If the 'Comparison' is simply 'placebo' or 'no intervention,' omit it as a key concept.\n\n"
+            f"Consider the use of Medical Subject Headings (MeSH) terms and text words for developing search terms in databases like PubMed, MEDLINE, Cochrane, CINAHL, and Embase.\n\n"
+            f"Population: {pico_elements['Population']}\n"
+            f"Intervention: {pico_elements['Intervention']}\n"
+            f"Comparison: {pico_elements['Comparison']}\n"
+            f"Outcome: {pico_elements['Outcome']}\n\n"
+            f"Provide the concepts as a numbered list, and rank them in terms of their relevance to defining an accurate search strategy."
+        )
+
+        response = client.chat.completions.create(
+            model='gpt-4o',  # Use the desired model
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an assistant that extracts key concepts from PICO elements."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            max_tokens=500,
+            temperature=0.5,
+            n=1,
+            stop=None,
+        )
+
+        # Extract the AI's reply from the response
+        concepts_output = response.choices[0].message.content.strip()
+        concepts = parse_concepts(concepts_output)
+        return concepts
+
+    except Exception as e:
+        logging.error(f"Error in generate_concepts_from_pico: {e}")
+        raise Exception("An error occurred while generating concepts from the PICO elements.")
+
+
+
+##########################PARSE######FUNCTIONS###########################################
 def parse_pico(pico_text):
     """
     Parses PICO elements from a given text.
@@ -164,3 +223,23 @@ def parse_pico(pico_text):
             pico_elements[key] = value
 
     return pico_elements
+
+
+def parse_concepts(concepts_text):
+    """
+    Parses the list of concepts from the AI's response.
+
+    Args:
+        concepts_text (str): Text containing the list of concepts.
+
+    Returns:
+        list: List of concepts.
+    """
+    lines = concepts_text.strip().split('\n')
+    concepts = []
+    for line in lines:
+        # Remove numbering and extra spaces
+        concept = re.sub(r'^\d+\.\s*', '', line).strip()
+        if concept:
+            concepts.append(concept)
+    return concepts

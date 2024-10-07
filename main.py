@@ -89,6 +89,7 @@ def main():
                 del st.session_state[key]
             st.rerun()
 
+#STEP 1
 def step_title_input():
     """
     Handles the Title Input step.
@@ -136,6 +137,7 @@ def step_title_input():
         st.session_state.pico_generated = False
         st.rerun()
 
+#STEP 2
 def step_pico_input():
     """
     Handles the PICO Input step.
@@ -210,22 +212,36 @@ def step_pico_input():
         else:
             st.warning("Please fill in all PICO elements before proceeding. ⚠️")
 
+#STEP 3
 def step_concept_extraction():
     """
-    Handles the Concept Extraction step with UI/UX enhancements and dummy data.
+    Handles the Concept Extraction step with AI integration.
     """
     st.header("Step 3: Concept Extraction")
 
     st.write("Based on your PICO elements, here are some extracted concepts. You can edit or delete them as needed.")
 
-    # Dummy Data: Concepts
     if 'concepts' not in st.session_state or not st.session_state.concepts:
-        # Initialize with dummy concepts
-        st.session_state.concepts = [
-            {'id': 1, 'text': 'Concept 1 (Dummy Data)'},  # Dummy Data
-            {'id': 2, 'text': 'Concept 2 (Dummy Data)'},  # Dummy Data
-            {'id': 3, 'text': 'Concept 3 (Dummy Data)'},  # Dummy Data
-        ]
+        # Prepare PICO elements
+        pico_elements = {
+            'Population': st.session_state.population,
+            'Intervention': st.session_state.intervention,
+            'Comparison': st.session_state.comparison,
+            'Outcome': st.session_state.outcome
+        }
+
+        # Run the concept AI function
+        try:
+            with st.spinner("Generating concepts from PICO elements..."):
+                concepts_list = ai_utils.generate_concepts_from_pico(pico_elements)
+                if not concepts_list:
+                    st.error("No concepts were generated. Please check your PICO elements.")
+                    return
+                # Assign IDs and format as list of dicts
+                st.session_state.concepts = [{'id': idx+1, 'text': concept} for idx, concept in enumerate(concepts_list)]
+        except Exception as e:
+            st.error(f"An error occurred while generating concepts: {str(e)}")
+            return  # Exit the function if there's an error
 
     concepts = st.session_state.concepts
 
@@ -239,7 +255,7 @@ def step_concept_extraction():
                 concept['text'] = new_text
             with cols[1]:
                 # Adjust the button style for better alignment
-                st.markdown("<div style='padding-top: 28px;'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='padding-top: 8px;'></div>", unsafe_allow_html=True)
                 delete = st.button(
                     "❌",
                     key=f"delete_concept_{concept['id']}",
@@ -252,7 +268,7 @@ def step_concept_extraction():
     # Button to add a new concept
     if st.button("Add Concept ➕"):
         new_id = max([c['id'] for c in st.session_state.concepts] or [0]) + 1
-        st.session_state.concepts.append({'id': new_id, 'text': f'Concept {new_id} (Dummy Data)'})  # Dummy Data
+        st.session_state.concepts.append({'id': new_id, 'text': ''})
         st.rerun()
 
     # Navigation buttons
@@ -273,6 +289,7 @@ def step_concept_extraction():
             st.session_state.completed_steps.remove("PICO")
         st.rerun()
 
+#STEP 4
 def step_generate_search_terms():
     """
     Handles the Generate Search Terms step with UI/UX enhancements and dummy data.
@@ -348,6 +365,7 @@ def step_generate_search_terms():
             st.session_state.completed_steps.remove("Concept Extraction")
         st.rerun()
 
+#STEP 5
 def step_construct_search_strategy():
     """
     Handles the Construct Search Strategy step with UI/UX enhancements and dummy data.
@@ -408,6 +426,7 @@ def step_construct_search_strategy():
 
     # Note: Removed 'Start Again' button from this step as per request
 
+#STEP 6
 def step_complete():
     """
     Handles the Complete step.
