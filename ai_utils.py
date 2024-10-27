@@ -242,9 +242,9 @@ def generate_search_terms_all(concepts_list):
 
         # Extract the AI's reply from the response
         terms_output = response.choices[0].message.content.strip()
-                
-        # Parse the output
-        search_terms_dict = parse_search_terms_all(terms_output)
+    
+        # Parse the output, passing the original concepts list
+        search_terms_dict = parse_search_terms_all(terms_output, concepts_list)
         return search_terms_dict
 
     except Exception as e:
@@ -305,21 +305,28 @@ def parse_concepts(concepts_text):
             concepts.append(concept)
     return concepts
 
-def parse_search_terms_all(terms_output):
+def parse_search_terms_all(terms_output, original_concepts):
     """
     Parses the AI's response containing search terms for all concepts.
 
     Args:
         terms_output (str): The AI's response text.
+        original_concepts (list): List of original concept texts.
 
     Returns:
         dict: A dictionary with concept texts as keys, and each value is a dict with 'MeSH Terms' and 'Text Terms' lists.
     """
     import re
 
+    # Ensure consistent line endings
+    terms_output = terms_output.replace('\r\n', '\n').replace('\r', '\n')
+
     # Split the output into blocks for each concept
-    concept_blocks = re.split(r'\n(?=Concept:)', terms_output)
+    concept_blocks = re.split(r'\n(?=Concept:)', terms_output, flags=re.IGNORECASE)
     search_terms_dict = {}
+
+    # Build a mapping from lowercased original concept texts to their original form
+    concept_mapping = {concept.lower(): concept for concept in original_concepts}
 
     for block in concept_blocks:
         lines = block.strip().split('\n')
@@ -330,11 +337,18 @@ def parse_search_terms_all(terms_output):
 
         for line in lines:
             line = line.strip()
-            if line.startswith('Concept:'):
-                concept_name = line[len('Concept:'):].strip()
-            elif line.startswith('MeSH Terms:'):
+            if re.match(r'^Concept:', line, re.IGNORECASE):
+                concept_name_ai = line[len('Concept:'):].strip()
+                # Map the AI's concept name back to the original concept_text
+                concept_name_lower = concept_name_ai.lower()
+                if concept_name_lower in concept_mapping:
+                    concept_name = concept_mapping[concept_name_lower]
+                else:
+                    # Handle cases where AI's concept name doesn't match
+                    concept_name = concept_name_ai  # Use AI's concept name as is
+            elif re.match(r'^MeSH Terms:', line, re.IGNORECASE):
                 current_section = 'MeSH Terms'
-            elif line.startswith('Text Terms:'):
+            elif re.match(r'^Text Terms:', line, re.IGNORECASE):
                 current_section = 'Text Terms'
             elif line.startswith('-'):
                 term = line[1:].strip()
