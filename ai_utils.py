@@ -154,6 +154,7 @@ def generate_concepts_from_pico(pico_elements):
             f"Comparison: {pico_elements['Comparison']}\n"
             f"Outcome: {pico_elements['Outcome']}\n\n"
             f"Provide the concepts as a numbered list, and rank them in terms of their relevance to defining an accurate search strategy."
+            f"Please do not add any e.g. or i.e. in the concepts."
         )
 
         response = client.chat.completions.create(
