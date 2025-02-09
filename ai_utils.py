@@ -38,7 +38,7 @@ def generate_pico_from_title(title):
         
         # Call the OpenAI API to generate PICO elements
         response = client.chat.completions.create(
-            model='gpt-4o',  # Use the desired model
+            model='o3-mini',  # Use the desired model
             messages=[
                 {
                     "role": "system",
@@ -49,10 +49,6 @@ def generate_pico_from_title(title):
                     "content": prompt
                 }
             ],
-            max_tokens=500,
-            temperature=0.5,
-            n=1,
-            stop=None,
         )
 
         # Extract the AI's reply from the response
@@ -108,7 +104,7 @@ def refine_pico_elements(pico_elements):
 
         # Call the OpenAI API to refine PICO elements
         response = client.chat.completions.create(
-            model='gpt-4o',
+            model='o3-mini',
             messages=[
                 {
                     "role": "system",
@@ -119,10 +115,6 @@ def refine_pico_elements(pico_elements):
                     "content": prompt
                 }
             ],
-            max_tokens=500,
-            temperature=0.5,
-            n=1,
-            stop=None,
         )
 
         # Extract the AI's reply from the response
@@ -165,7 +157,7 @@ def generate_concepts_from_pico(pico_elements):
         )
 
         response = client.chat.completions.create(
-            model='gpt-4o',  # Use the desired model
+            model='o3-mini',  # Use the desired model
             messages=[
                 {
                     "role": "system",
@@ -176,10 +168,6 @@ def generate_concepts_from_pico(pico_elements):
                     "content": prompt
                 }
             ],
-            max_tokens=500,
-            temperature=0.5,
-            n=1,
-            stop=None,
         )
 
         # Extract the AI's reply from the response
@@ -223,7 +211,7 @@ def generate_search_terms_all(concepts_list):
 
         # Call the OpenAI API to generate the terms
         response = client.chat.completions.create(
-            model='gpt-4o',  # Use the desired model
+            model='o3-mini',  # Use the desired model
             messages=[
                 {
                     "role": "system",
@@ -234,10 +222,6 @@ def generate_search_terms_all(concepts_list):
                     "content": prompt
                 }
             ],
-            max_tokens=3000,
-            temperature=0.3,
-            n=1,
-            stop=None,
         )
 
         # Extract the AI's reply from the response
