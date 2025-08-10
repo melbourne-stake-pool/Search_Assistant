@@ -1,17 +1,12 @@
 # main.py
 
 import streamlit as st
-import openai
 import ai_utils  # Importing the AI utilities module
 import logging
 import pandas as pd  # Import pandas for data manipulation
-import base64  # For copy to clipboard functionality
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
-
-# Set up OpenAI API key securely
-openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def initialize_session_state():
     """
@@ -203,13 +198,14 @@ def step_pico_input():
         st.session_state.comparison = comparison_input
         st.session_state.outcome = outcome_input
 
-        # Ensure all PICO fields are filled
-        if all([
-            st.session_state.population.strip(),
-            st.session_state.intervention.strip(),
-            st.session_state.comparison.strip(),
-            st.session_state.outcome.strip()
-        ]):
+        ###### validate PICO fields ###################################################
+        # Coerce possibly-None session_state values to strings before calling .strip()
+        pop = str(st.session_state.get("population", "") or "").strip()
+        intv = str(st.session_state.get("intervention", "") or "").strip()
+        comp = str(st.session_state.get("comparison", "") or "").strip()
+        outc = str(st.session_state.get("outcome", "") or "").strip()
+
+        if all([pop, intv, comp, outc]):
             # Mark PICO step as completed
             if "PICO" not in st.session_state.completed_steps:
                 st.session_state.completed_steps.append("PICO")
@@ -511,7 +507,7 @@ def step_complete():
         navigator.clipboard.writeText('{search_strategy}');
         </script>
         """
-        st.components.v1.html(js, height=0)
+        st.components.v1.html(js, height=0) # type: ignore[attr-defined]
         st.success("Search strategy copied to clipboard!")
 
     # 'Start Again' button

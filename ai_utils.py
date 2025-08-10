@@ -1,10 +1,12 @@
 # ai_utils.py
 
-from openai import OpenAI
 import re
 import logging
 import streamlit as st
+from gpt_helper import gpt_api_call
 
+
+###################################################################################
 def generate_pico_from_title(title):
     """
     Generates PICO elements from a given research title using OpenAI's API.
@@ -19,10 +21,6 @@ def generate_pico_from_title(title):
         Exception: If an error occurs during the API call.
     """
     try:
-        client = OpenAI()
-        # Ensure OpenAI API key is set from Streamlit secrets
-        client.api_key = st.secrets["OPENAI_API_KEY"]  # Securely fetch the API key
-        
         # Construct the AI prompt
         prompt = (
             f"Develop and create relevant PICO elements (Population, Intervention, Comparison, Outcome) "
@@ -35,31 +33,16 @@ def generate_pico_from_title(title):
             f"Comparison: Comparison\n"
             f"Outcome: Outcome"
         )
-        
-        # Call the OpenAI API to generate PICO elements
-        response = client.chat.completions.create(
-            model='o3-mini',  # Use the desired model
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an assistant that extracts PICO elements from research titles."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-        )
-
-        # Extract the AI's reply from the response
-        pico_output = response.choices[0].message.content.strip()
-        pico_elements = parse_pico(pico_output)
+        response = gpt_api_call(prompt) #call the gpt_api_call function from gpt_helper.py
+        text = (response.get("content") or "").strip()
+        pico_elements = parse_pico(text)
         return pico_elements
 
     except Exception as e:
         logging.error(f"Error in generate_pico_from_title: {e}")
         raise Exception("An error occurred while generating PICO elements from the title.")
 
+###################################################################################
 def refine_pico_elements(pico_elements):
     """
     Refines the provided PICO elements for clarity and specificity using OpenAI's API.
@@ -74,10 +57,6 @@ def refine_pico_elements(pico_elements):
         Exception: If an error occurs during the API call.
     """
     try:       
-        client = OpenAI()
-        # Ensure OpenAI API key is set from Streamlit secrets
-        client.api_key = st.secrets["OPENAI_API_KEY"]  # Securely fetch the API key
-
         # Prepare the PICO statement
         pico_statement = (
             f"Population: {pico_elements['Population']}\n"
@@ -102,30 +81,16 @@ def refine_pico_elements(pico_elements):
             f"Outcome: {pico_elements['Outcome']}"
         )
 
-        # Call the OpenAI API to refine PICO elements
-        response = client.chat.completions.create(
-            model='o3-mini',
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an assistant that refines PICO elements for clarity and specificity."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-        )
-
-        # Extract the AI's reply from the response
-        refined_pico_output = response.choices[0].message.content.strip()
-        refined_pico_elements = parse_pico(refined_pico_output)
+        response = gpt_api_call(prompt) #call the gpt_api_call function from gpt_helper.py
+        text = (response.get("content") or "").strip()
+        refined_pico_elements = parse_pico(text)
         return refined_pico_elements
 
     except Exception as e:
         logging.error(f"Error in refine_pico_elements: {e}")
         raise Exception("An error occurred while refining the PICO elements.")
 
+###################################################################################
 def generate_concepts_from_pico(pico_elements):
     """
     Generates key concepts from the given PICO elements using OpenAI's API.
@@ -140,10 +105,6 @@ def generate_concepts_from_pico(pico_elements):
         Exception: If an error occurs during the API call.
     """
     try:
-        client = OpenAI()
-        # Ensure OpenAI API key is set from Streamlit secrets
-        client.api_key = st.secrets["OPENAI_API_KEY"]  # Securely fetch the API key
-
         # Construct the AI prompt
         prompt = (
             f"From the following PICO elements, extract between 3 to 6 key concepts that are highly relevant for developing an accurate and effective search strategy.\n\n"
@@ -157,29 +118,16 @@ def generate_concepts_from_pico(pico_elements):
             f"Please do not add any e.g. or i.e. in the concepts."
         )
 
-        response = client.chat.completions.create(
-            model='o3-mini',  # Use the desired model
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an assistant that extracts key concepts from PICO elements."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-        )
-
-        # Extract the AI's reply from the response
-        concepts_output = response.choices[0].message.content.strip()
-        concepts = parse_concepts(concepts_output)
+        response = gpt_api_call(prompt) #call the gpt_api_call function from gpt_helper.py
+        text = (response.get("content") or "").strip()
+        concepts = parse_concepts(text)
         return concepts
 
     except Exception as e:
         logging.error(f"Error in generate_concepts_from_pico: {e}")
         raise Exception("An error occurred while generating concepts from the PICO elements.")
 
+###################################################################################
 def generate_search_terms_all(concepts_list):
     """
     Generates MeSH terms and Text terms for all concepts using OpenAI's API.
@@ -194,10 +142,6 @@ def generate_search_terms_all(concepts_list):
         Exception: If an error occurs during the API call.
     """
     try:
-        client = OpenAI()
-        # Ensure OpenAI API key is set from Streamlit secrets
-        client.api_key = st.secrets["OPENAI_API_KEY"]  # Securely fetch the API key
-
         # Construct the AI prompt
         concepts_text = "\n".join([f"{idx+1}. {concept}" for idx, concept in enumerate(concepts_list)])
         prompt = (
@@ -210,35 +154,26 @@ def generate_search_terms_all(concepts_list):
             f"Please ensure that the output is properly formatted as specified."
         )
 
-        # Call the OpenAI API to generate the terms
-        response = client.chat.completions.create(
-            model='o3-mini',  # Use the desired model
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an assistant that generates MeSH terms and Text terms for medical concepts."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-        )
-
-        # Extract the AI's reply from the response
-        terms_output = response.choices[0].message.content.strip()
-    
+        response = gpt_api_call(prompt) #call the gpt_api_call function from gpt_helper.py
+        text = (response.get("content") or "").strip()
         # Parse the output, passing the original concepts list
-        search_terms_dict = parse_search_terms_all(terms_output, concepts_list)
+        search_terms_dict = parse_search_terms_all(text, concepts_list)
         return search_terms_dict
 
     except Exception as e:
         logging.error(f"Error in generate_search_terms_all: {e}")
         raise Exception("An error occurred while generating search terms.")
 
-
-
+#########################################################################################
 ##########################PARSE######FUNCTIONS###########################################
+def _strip_leading_markers(s: str) -> str:
+    """
+    Remove bullets and numbering like '-', '*', '•', '1.', '1)', '  2)  ' etc.
+    """
+    return re.sub(r'^\s*(?:[-*•]\s*)?(?:\d+\s*[\.\)]\s*)?', '', str(s)).strip()
+
+##########################################################################################
+
 def parse_pico(pico_text):
     """
     Parses PICO elements from a given text.
@@ -271,83 +206,67 @@ def parse_pico(pico_text):
 
     return pico_elements
 
-def parse_concepts(concepts_text):
-    """
-    Parses the list of concepts from the AI's response.
-
-    Args:
-        concepts_text (str): Text containing the list of concepts.
-
-    Returns:
-        list: List of concepts.
-    """
-    lines = concepts_text.strip().split('\n')
+###### parse_concepts (replace your current one) ###############################
+def parse_concepts(concepts_text: str) -> list[str]:
+    lines = (concepts_text or "").splitlines()
     concepts = []
     for line in lines:
-        # Remove numbering and extra spaces
-        concept = re.sub(r'^\d+\.\s*', '', line).strip()
+        concept = _strip_leading_markers(line)
         if concept:
             concepts.append(concept)
     return concepts
 
-def parse_search_terms_all(terms_output, original_concepts):
+###### parse_search_terms_all (drop-in replacement) ###########################
+def parse_search_terms_all(terms_output: str, original_concepts: list[str]) -> dict:
     """
-    Parses the AI's response containing search terms for all concepts.
-
-    Args:
-        terms_output (str): The AI's response text.
-        original_concepts (list): List of original concept texts.
-
-    Returns:
-        dict: A dictionary with concept texts as keys, and each value is a dict with 'MeSH Terms' and 'Text Terms' lists.
+    Parse the LLM output into:
+      { Concept: { 'MeSH Terms': [...], 'Text Terms': [...] } }
+    Robust to numbered/bulleted variants from both the prompt and the model.
     """
-    import re
+    terms_output = (terms_output or "").replace('\r\n', '\n').replace('\r', '\n')
 
-    # Ensure consistent line endings
-    terms_output = terms_output.replace('\r\n', '\n').replace('\r', '\n')
+    # Map normalised original concepts -> original text
+    def norm(s: str) -> str: return _strip_leading_markers(s).lower()
+    concept_mapping = {norm(c): c for c in original_concepts}
 
-    # Split the output into blocks for each concept
-    concept_blocks = re.split(r'\n(?=Concept:)', terms_output, flags=re.IGNORECASE)
+    # Split by 'Concept:' headers (case-insensitive)
+    concept_blocks = re.split(r'\n(?=Concept\s*:)', terms_output, flags=re.IGNORECASE)
     search_terms_dict = {}
 
-    # Build a mapping from lowercased original concept texts to their original form
-    concept_mapping = {concept.lower(): concept for concept in original_concepts}
-
     for block in concept_blocks:
-        lines = block.strip().split('\n')
+        block = block.strip()
+        if not block:
+            continue
+
+        lines = block.split('\n')
         concept_name = ''
-        mesh_terms = []
-        text_terms = []
+        mesh_terms, text_terms = [], []
         current_section = None
 
         for line in lines:
-            line = line.strip()
-            if re.match(r'^Concept:', line, re.IGNORECASE):
-                concept_name_ai = line[len('Concept:'):].strip()
-                # Map the AI's concept name back to the original concept_text
-                concept_name_lower = concept_name_ai.lower()
-                if concept_name_lower in concept_mapping:
-                    concept_name = concept_mapping[concept_name_lower]
-                else:
-                    # Handle cases where AI's concept name doesn't match
-                    concept_name = concept_name_ai  # Use AI's concept name as is
-            elif re.match(r'^MeSH Terms:', line, re.IGNORECASE):
+            l = line.strip()
+
+            # Concept header
+            if re.match(r'^Concept\s*:', l, re.IGNORECASE):
+                concept_name_ai = l.split(':', 1)[1].strip()
+                # Use normalised name to look up the original concept text
+                concept_name = concept_mapping.get(norm(concept_name_ai), _strip_leading_markers(concept_name_ai))
+
+            # Section headers
+            elif re.match(r'^MeSH\s*Terms\s*:', l, re.IGNORECASE):
                 current_section = 'MeSH Terms'
-            elif re.match(r'^Text Terms:', line, re.IGNORECASE):
+            elif re.match(r'^Text\s*Terms\s*:', l, re.IGNORECASE):
                 current_section = 'Text Terms'
-            elif line.startswith('-'):
-                term = line[1:].strip()
+
+            # Bullet terms
+            elif l.startswith('-'):
+                term = l[1:].strip()
                 if current_section == 'MeSH Terms':
                     mesh_terms.append(term)
                 elif current_section == 'Text Terms':
                     text_terms.append(term)
-            else:
-                continue  # Skip any unrecognized lines
 
         if concept_name:
-            search_terms_dict[concept_name] = {
-                'MeSH Terms': mesh_terms,
-                'Text Terms': text_terms
-            }
+            search_terms_dict[concept_name] = {'MeSH Terms': mesh_terms, 'Text Terms': text_terms}
 
     return search_terms_dict
